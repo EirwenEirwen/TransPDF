@@ -1,0 +1,17 @@
+# 统一换行符，避免跨平台克隆后整个仓库显示为已修改
+* text=auto
+
+*.py    text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+*.json  text eol=lf
+*.spec  text eol=lf
+
+# Windows 批处理必须用 CRLF，否则可能无法执行
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# 字体与模型视为二进制，不做换行符转换
+*.otf   binary
+*.ttf   binary
+*.gguf  binary
