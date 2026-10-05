@@ -405,7 +405,10 @@ def translate_pdf(src, dst, cfg=None, log=None,
     # ---- 领域检测：按全文关键词自动注入领域术语规范 ----
     domains = engines.detect_domains(" ".join(t.text for t in all_tasks))
     if domains:
-        labels = "、".join(engines.DOMAIN_PROFILES[d]["label"] for d in domains)
+        labels = "、".join(
+            f"{engines.DOMAIN_PROFILES[d]['label']}（{engines.domain_terms_count(d)} 条术语）"
+            for d in domains
+        )
         log(f"[领域] 检测到{labels}主题，已注入对应术语规范")
         cfg = dict(cfg)
         cfg["_domains"] = domains

@@ -261,6 +261,69 @@ def t_glossary():
     return f"载入 {len(gloss)} 条、丢弃 {dropped} 条并已提示"
 
 
+def t_domain_terms():
+    """领域术语表：结构、渲染、覆盖规模、体积护栏。
+
+    terms 从字符串改为「子领域 -> [(英文, 中文)]」的结构化词表后，
+    build_system_prompt 必须经 _render_terms 渲染；漏渲染会把整个 dict
+    的 repr 拼进提示词（模型看到的是 {'机器学习与训练范式': [...]}），
+    这条断言就是为拦住该失效模式而写的。
+    """
+    total = {}
+    for did, prof in engines.DOMAIN_PROFILES.items():
+        assert isinstance(prof.get("label"), str) and prof["label"], f"{did} 缺 label"
+        assert isinstance(prof.get("keywords"), list) and prof["keywords"], f"{did} 缺 keywords"
+        groups = prof.get("terms")
+        assert isinstance(groups, dict), \
+            f"{did}.terms 应为 dict，实际 {type(groups).__name__}（旧结构）"
+        pairs = [(en, zh) for g in groups.values() for en, zh in g]
+        assert len(pairs) >= 100, f"{did} 术语仅 {len(pairs)} 条，覆盖不足"
+        for en, zh in pairs:
+            assert en.strip() and zh.strip(), f"{did} 存在空词条"
+            assert engines._HAN_RE.search(zh), f"{did} 词条缺中文译名：{en} -> {zh}"
+        assert prof.get("notes"), f"{did} 缺 notes（行内代码/专名规则）"
+        total[did] = len(pairs)
+
+        block, used, dropped = engines._render_terms(prof)
+        assert used == len(pairs) and dropped == 0, \
+            f"{did} 渲染丢条：used={used} dropped={dropped}，上限 {engines._DOMAIN_TERMS_MAX_CHARS}"
+        assert prof["label"] in block, f"{did} 渲染结果缺标题"
+        assert "{" not in block and "':" not in block, f"{did} 渲染混入 dict repr"
+        for en, zh in pairs[:5]:
+            assert f"{en} {zh}" in block, f"{did} 渲染缺词条 {en}"
+
+    # 走一遍真实入口：同时命中两个领域时不得告警、体积不得失控
+    logs = []
+    sp = engines.build_system_prompt({"glossary": {}}, ["cs", "game"], logs.append)
+    for did in ("cs", "game"):
+        assert engines.DOMAIN_PROFILES[did]["label"] in sp, f"系统提示词缺 {did} 术语块"
+    assert "{" not in sp and "':" not in sp, "系统提示词混入 dict repr"
+    assert not logs, f"正常规模不应告警：{logs}"
+    assert len(sp) < 8000, f"双领域提示词 {len(sp)} 字符，吃占 ctx=8192 过多"
+
+    # 体积护栏：压低上限后必须整组丢弃并如实返回条数，不允许静默膨胀
+    prof = engines.DOMAIN_PROFILES["cs"]
+    full, full_used, _ = engines._render_terms(prof)
+    old = engines._DOMAIN_TERMS_MAX_CHARS
+    try:
+        engines._DOMAIN_TERMS_MAX_CHARS = 300
+        block, used, dropped = engines._render_terms(prof)
+    finally:
+        engines._DOMAIN_TERMS_MAX_CHARS = old
+    assert dropped > 0 and 0 < used < full_used, "压低上限后未按预期整组截断"
+    assert len(block) < len(full), "截断后体积未下降"
+
+    # 检测：合成文本必须命中对应领域
+    cs_txt = ("the transformer attention mechanism with GPU throughput and latency "
+              "benchmark of a neural network")
+    assert "cs" in engines.detect_domains(cs_txt), "计算机关键词未命中"
+    gm_txt = ("gameplay pathfinding matchmaking game engine level design NPC "
+              "cooldown skill tree boss fight")
+    assert "game" in engines.detect_domains(gm_txt), "游戏关键词未命中"
+    assert engines.domain_terms_count("cs") == total["cs"], "domain_terms_count 与词表不一致"
+    return "；".join(f"{d} {n} 条" for d, n in total.items())
+
+
 def t_pdfproc():
     import pymupdf
     path = _ensure_sample()
@@ -314,6 +377,7 @@ check("netstat 端口归属解析", t_port_pids)
 check("端口归属判定", t_owns_port)
 check("MyMemory 字节分块", t_chunk)
 check("术语表上限与提示", t_glossary)
+check("领域术语表（结构/渲染/覆盖/护栏）", t_domain_terms)
 check("extract_page_tasks 真实 PDF 功能", t_pdfproc)
 check("源码级回归断言", t_src_regressions)
 

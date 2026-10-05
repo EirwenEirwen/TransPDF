@@ -66,21 +66,183 @@ DOMAIN_PROFILES = {
             r"compiler", r"throughput", r"latency", r"\bcache\b", r"thread",
             r"kernel", r"distributed system", r"\bGPU\b", r"\bCPU\b",
             r"inference", r"fine-tuning", r"training loss", r"accuracy",
-            r"algorithm", r"complexity", r"API", r"ablation",
+            r"algorithm", r"complexity", r"\bAPI\b", r"ablation",
+            r"transformer", r"attention", r"embedding", r"pre-?train",
+            r"supervised", r"unsupervised", r"optimization", r"convergence",
+            r"dataset", r"corpus", r"\bLLM\b", r"quantization", r"inference",
+            r"\bquery\b", r"database", r"encryption", r"vulnerability",
+            r"concurren\w+", r"parallel", r"\bthread\b", r"compiler",
+            r"refactor", r"unit test", r"regression", r"\bSOTA\b",
+            r"hyperparameter", r"overfitting", r"generalization",
         ],
-        "terms": (
-            "【计算机领域术语规范】machine learning 机器学习；deep learning 深度学习；"
-            "neural network 神经网络；reinforcement learning 强化学习；supervised/unsupervised learning "
-            "监督学习/无监督学习；fine-tuning 微调；inference 推理；overfitting 过拟合；"
-            "generalization 泛化；token 词元；prompt 提示词；embedding 嵌入表示；"
-            "attention mechanism 注意力机制；benchmark 基准测试；dataset 数据集；"
-            "throughput 吞吐量；latency 延迟；cache 缓存；thread 线程；process 进程；"
-            "concurrency 并发；parallelism 并行；distributed system 分布式系统；"
-            "compiler 编译器；runtime 运行时；memory 内存；bandwidth 带宽；overhead 开销；"
-            "robustness 鲁棒性；scalability 可扩展性；accuracy/precision/recall "
-            "准确率/精确率/召回率；ablation study 消融实验；state-of-the-art 最先进的。"
+        "terms": {
+            "机器学习与训练范式": [
+                ("machine learning", "机器学习"),
+                ("supervised learning", "监督学习"),
+                ("unsupervised learning", "无监督学习"),
+                ("semi-supervised learning", "半监督学习"),
+                ("self-supervised learning", "自监督学习"),
+                ("reinforcement learning", "强化学习"),
+                ("transfer learning", "迁移学习"),
+                ("meta-learning", "元学习"),
+                ("few-shot learning", "少样本学习"),
+                ("zero-shot learning", "零样本学习"),
+                ("pre-training", "预训练"),
+                ("fine-tuning", "微调"),
+                ("instruction tuning", "指令微调"),
+                ("prompt", "提示词"),
+                ("prompt engineering", "提示词工程"),
+                ("in-context learning", "上下文学习"),
+                ("chain-of-thought", "思维链"),
+                ("alignment", "对齐"),
+                ("reward model", "奖励模型"),
+            ],
+            "模型与架构": [
+                ("neural network", "神经网络"),
+                ("deep learning", "深度学习"),
+                ("convolutional neural network", "卷积神经网络"),
+                ("recurrent neural network", "循环神经网络"),
+                ("transformer", "变换器"),
+                ("attention mechanism", "注意力机制"),
+                ("self-attention", "自注意力"),
+                ("multi-head attention", "多头注意力"),
+                ("encoder", "编码器"),
+                ("decoder", "解码器"),
+                ("embedding", "嵌入表示"),
+                ("latent space", "潜空间"),
+                ("layer normalization", "层归一化"),
+                ("batch normalization", "批归一化"),
+                ("residual connection", "残差连接"),
+                ("activation function", "激活函数"),
+                ("dropout", "随机失活"),
+                ("generative adversarial network", "生成对抗网络"),
+                ("diffusion model", "扩散模型"),
+                ("large language model", "大语言模型"),
+                ("mixture of experts", "混合专家"),
+                ("quantization", "量化"),
+                ("parameter", "参数"),
+                ("hyperparameter", "超参数"),
+                ("checkpoint", "检查点"),
+            ],
+            "训练与优化": [
+                ("training set", "训练集"),
+                ("validation set", "验证集"),
+                ("test set", "测试集"),
+                ("loss function", "损失函数"),
+                ("gradient descent", "梯度下降"),
+                ("stochastic gradient descent", "随机梯度下降"),
+                ("backpropagation", "反向传播"),
+                ("learning rate", "学习率"),
+                ("batch size", "批大小"),
+                ("epoch", "轮次"),
+                ("convergence", "收敛"),
+                ("regularization", "正则化"),
+                ("overfitting", "过拟合"),
+                ("underfitting", "欠拟合"),
+                ("generalization", "泛化"),
+                ("catastrophic forgetting", "灾难性遗忘"),
+                ("data augmentation", "数据增强"),
+                ("ablation study", "消融实验"),
+                ("baseline", "基线"),
+                ("state-of-the-art", "最先进的"),
+            ],
+            "评测指标": [
+                ("accuracy", "准确率"),
+                ("precision", "精确率"),
+                ("recall", "召回率"),
+                ("F1 score", "F1 值"),
+                ("confusion matrix", "混淆矩阵"),
+                ("mean squared error", "均方误差"),
+                ("perplexity", "困惑度"),
+                ("hallucination", "幻觉"),
+            ],
+            "系统与性能": [
+                ("throughput", "吞吐量"),
+                ("latency", "延迟"),
+                ("overhead", "开销"),
+                ("bottleneck", "瓶颈"),
+                ("cache", "缓存"),
+                ("cache hit", "缓存命中"),
+                ("bandwidth", "带宽"),
+                ("memory", "内存"),
+                ("virtual memory", "虚拟内存"),
+                ("garbage collection", "垃圾回收"),
+                ("concurrency", "并发"),
+                ("parallelism", "并行"),
+                ("thread", "线程"),
+                ("process", "进程"),
+                ("deadlock", "死锁"),
+                ("race condition", "竞态条件"),
+                ("synchronization", "同步"),
+                ("asynchronous", "异步"),
+                ("serialization", "序列化"),
+                ("scheduler", "调度器"),
+                ("load balancing", "负载均衡"),
+                ("cluster", "集群"),
+                ("sharding", "分片"),
+                ("replication", "副本"),
+                ("consistency", "一致性"),
+                ("fault tolerance", "容错"),
+                ("distributed system", "分布式系统"),
+            ],
+            "软件工程": [
+                ("compiler", "编译器"),
+                ("interpreter", "解释器"),
+                ("runtime", "运行时"),
+                ("abstraction", "抽象"),
+                ("interface", "接口"),
+                ("dependency", "依赖"),
+                ("refactoring", "重构"),
+                ("unit test", "单元测试"),
+                ("integration test", "集成测试"),
+                ("regression", "回归"),
+                ("version control", "版本控制"),
+                ("code review", "代码审查"),
+                ("technical debt", "技术债"),
+                ("design pattern", "设计模式"),
+                ("modularity", "模块化"),
+                ("coupling", "耦合"),
+                ("backward compatibility", "向后兼容"),
+                ("scalability", "可扩展性"),
+                ("robustness", "鲁棒性"),
+            ],
+            "算法与数据结构": [
+                ("algorithm", "算法"),
+                ("data structure", "数据结构"),
+                ("time complexity", "时间复杂度"),
+                ("space complexity", "空间复杂度"),
+                ("recursion", "递归"),
+                ("dynamic programming", "动态规划"),
+                ("greedy algorithm", "贪心算法"),
+                ("hash table", "哈希表"),
+                ("heuristic", "启发式"),
+                ("NP-hard", "NP 难"),
+            ],
+            "数据库与网络": [
+                ("database", "数据库"),
+                ("query", "查询"),
+                ("index", "索引"),
+                ("transaction", "事务"),
+                ("schema", "模式"),
+                ("join", "连接"),
+                ("protocol", "协议"),
+                ("packet", "数据包"),
+                ("encryption", "加密"),
+                ("authentication", "认证"),
+                ("authorization", "授权"),
+            ],
+            "安全与隐私": [
+                ("vulnerability", "漏洞"),
+                ("exploit", "利用"),
+                ("attack surface", "攻击面"),
+                ("adversarial example", "对抗样本"),
+                ("differential privacy", "差分隐私"),
+                ("federated learning", "联邦学习"),
+            ],
+        },
+        "notes": (
             "正文中的行内代码一律原样保留：函数名与 API（如 env.step()、getUserData）、"
-            "下划线/驼峰标识符（如 max_pool_size、BatchNorm）、命令与文件路径不翻译。"
+            "下划线/驼峰标识符（如 max_pool_size、BatchNorm）、命令行与文件路径不翻译。"
         ),
     },
     "game": {
@@ -90,27 +252,197 @@ DOMAIN_PROFILES = {
             r"\bFPS\b", r"esport", r"StarCraft", r"\bDota\b", r"League of Legends",
             r"game engine", r"pathfinding", r"level design", r"matchmaking",
             r"\bNPC\b", r"playtest", r"gaming", r"\bHUD\b", r"roguelike",
+            r"\bRPG\b", r"tower defense", r"game balance", r"cooldown",
+            r"\bloot\b", r"skill tree", r"shader", r"frame rate", r"\btick rate\b",
+            r"rollback", r"netcode", r"battle pass", r"monetization",
+            r"procedural generation", r"level up", r"boss fight",
+            r"\bspawn\b", r"\bquest\b", r"difficulty", r"\bmap\b",
+            r"competitive", r"\bpatch\b", r"early access",
         ],
-        "terms": (
-            "【游戏领域术语规范】real-time strategy (RTS) 即时战略；MOBA 多人在线战术竞技；"
-            "first-person shooter (FPS) 第一人称射击；MMO 大型多人在线；gameplay 玩法；"
-            "game mechanics 游戏机制；game engine 游戏引擎；physics engine 物理引擎；"
-            "rendering 渲染；frame rate 帧率；tick rate 逻辑帧率；pathfinding 寻路；"
-            "navigation mesh 导航网格；procedural content generation 程序化内容生成；"
-            "level design 关卡设计；unit 单位；micro-operation 微操作；macro-management 宏观运营；"
-            "matchmaking 匹配系统；lag compensation 延迟补偿；rollback 回滚同步；"
-            "esports 电子竞技；player 玩家；NPC 非玩家角色（NPC）；HUD 平视显示界面（HUD）；"
-            "playtesting 玩家测试；player retention 玩家留存；monetization 付费变现；"
-            "loot box 开箱；gacha 抽卡；Elo rating Elo 等级分；win rate 胜率；"
-            "action space 动作空间；observation space 观测空间；self-play 自博弈。"
-            "游戏名称是专有名词：有官方中文名的必须用官方名（League of Legends 英雄联盟、"
-            "Overwatch 守望先锋、Minecraft 我的世界、CrossFire 穿越火线）；"
-            "没有通行官方译名的保留英文原名（如 StarCraft II、Dota 2、Civilization VI）。"
+        "terms": {
+            "品类与玩法": [
+                ("real-time strategy (RTS)", "即时战略"),
+                ("turn-based strategy", "回合制策略"),
+                ("strategy RPG (SRPG)", "战略角色扮演（战棋）"),
+                ("MOBA", "多人在线战术竞技"),
+                ("first-person shooter (FPS)", "第一人称射击"),
+                ("third-person shooter", "第三人称射击"),
+                ("massively multiplayer online (MMO)", "大型多人在线"),
+                ("role-playing game (RPG)", "角色扮演游戏"),
+                ("action RPG", "动作角色扮演"),
+                ("tower defense", "塔防"),
+                ("roguelike", "肉鸽类"),
+                ("roguelite", "轻肉鸽"),
+                ("battle royale", "大逃杀"),
+                ("sandbox", "沙盒"),
+                ("simulation", "模拟"),
+                ("platformer", "平台跳跃"),
+                ("metroidvania", "类银河恶魔城"),
+                ("puzzle", "解谜"),
+                ("survival", "生存"),
+                ("idle game", "放置类"),
+                ("deck-building", "卡组构筑"),
+                ("auto-battler", "自走棋"),
+                ("visual novel", "视觉小说"),
+                ("rhythm game", "音乐节奏游戏"),
+            ],
+            "核心机制与系统": [
+                ("gameplay", "玩法"),
+                ("game mechanics", "游戏机制"),
+                ("core loop", "核心循环"),
+                ("game feel", "手感"),
+                ("game balance", "平衡性"),
+                ("difficulty curve", "难度曲线"),
+                ("player agency", "玩家能动性"),
+                ("emergent gameplay", "涌现式玩法"),
+                ("synergy", "协同"),
+                ("loadout", "配装"),
+                ("cooldown", "冷却时间"),
+                ("stamina", "体力"),
+                ("resource management", "资源管理"),
+                ("crafting", "制作"),
+                ("progression system", "成长系统"),
+                ("skill tree", "技能树"),
+                ("talent tree", "天赋树"),
+                ("leveling", "升级"),
+                ("experience point", "经验值"),
+                ("loot", "战利品"),
+                ("drop rate", "掉落率"),
+                ("inventory", "物品栏"),
+                ("quest", "任务"),
+                ("dialogue tree", "对话树"),
+                ("branching narrative", "分支叙事"),
+                ("permadeath", "永久死亡"),
+            ],
+            "关卡与内容": [
+                ("level design", "关卡设计"),
+                ("blockout", "关卡草模（灰盒）"),
+                ("pacing", "节奏"),
+                ("tutorial", "新手引导"),
+                ("onboarding", "上手引导"),
+                ("checkpoint", "存档点"),
+                ("open world", "开放世界"),
+                ("hub world", "枢纽世界"),
+                ("biome", "生物群系"),
+                ("tilemap", "瓦片地图"),
+                ("spawn point", "出生点"),
+                ("wave", "波次"),
+                ("encounter design", "遭遇设计"),
+            ],
+            "游戏 AI 与战斗": [
+                ("pathfinding", "寻路"),
+                ("navigation mesh", "导航网格"),
+                ("behavior tree", "行为树"),
+                ("finite state machine", "有限状态机"),
+                ("crowd simulation", "人群模拟"),
+                ("NPC", "非玩家角色（NPC）"),
+                ("aggro", "仇恨"),
+                ("threat", "威胁值"),
+                ("boss", "首领"),
+                ("telegraph", "预警动作"),
+                ("hitbox", "判定框"),
+                ("collision detection", "碰撞检测"),
+                ("damage per second (DPS)", "每秒伤害（DPS）"),
+                ("crowd control", "控制效果"),
+                ("buff / debuff", "增益 / 减益"),
+            ],
+            "图形与渲染": [
+                ("rendering", "渲染"),
+                ("shader", "着色器"),
+                ("texture", "贴图"),
+                ("sprite", "精灵图"),
+                ("mesh", "网格"),
+                ("polygon", "多边形"),
+                ("lighting", "光照"),
+                ("shadow map", "阴影贴图"),
+                ("post-processing", "后处理"),
+                ("anti-aliasing", "抗锯齿"),
+                ("level of detail (LOD)", "细节层次（LOD）"),
+                ("occlusion culling", "遮挡剔除"),
+                ("draw call", "绘制调用"),
+                ("frame rate", "帧率"),
+                ("v-sync", "垂直同步"),
+                ("physics engine", "物理引擎"),
+            ],
+            "网络与同步": [
+                ("netcode", "网络同步"),
+                ("tick rate", "逻辑帧率"),
+                ("ping", "网络延迟"),
+                ("packet loss", "丢包"),
+                ("lag compensation", "延迟补偿"),
+                ("client-side prediction", "客户端预测"),
+                ("server reconciliation", "服务器校正"),
+                ("rollback", "回滚同步"),
+                ("lockstep", "锁定步进"),
+                ("determinism", "确定性"),
+                ("authoritative server", "权威服务器"),
+                ("matchmaking", "匹配系统"),
+                ("dedicated server", "专用服务器"),
+                ("peer-to-peer", "点对点"),
+            ],
+            "竞技与电竞": [
+                ("esports", "电子竞技"),
+                ("ranked", "排位"),
+                ("ladder", "天梯"),
+                ("MMR", "匹配分"),
+                ("Elo rating", "Elo 等级分"),
+                ("win rate", "胜率"),
+                ("meta", "版本主流打法"),
+                ("tier list", "强度榜"),
+                ("patch", "版本更新"),
+                ("ban / pick", "禁用与选取"),
+                ("draft", "选人阶段"),
+                ("teamfight", "团战"),
+                ("kiting", "风筝（走位牵制）"),
+                ("last hitting", "补刀"),
+                ("micro-operation", "微操作"),
+                ("macro-management", "宏观运营"),
+                ("APM", "每分钟操作数（APM）"),
+            ],
+            "运营与商业化": [
+                ("live ops", "长线运营"),
+                ("seasonal content", "赛季内容"),
+                ("battle pass", "战斗通行证"),
+                ("loot box", "开箱"),
+                ("gacha", "抽卡"),
+                ("monetization", "付费变现"),
+                ("microtransaction", "微交易"),
+                ("early access", "抢先体验"),
+                ("player retention", "玩家留存"),
+                ("churn", "流失"),
+                ("engagement", "参与度"),
+                ("free-to-play", "免费游玩"),
+            ],
+            "制作与测试": [
+                ("playtesting", "玩家测试"),
+                ("QA", "质量保证"),
+                ("balance patch", "平衡性补丁"),
+                ("hotfix", "热修复"),
+                ("feature creep", "功能蔓延"),
+                ("vertical slice", "垂直切片"),
+                ("prototype", "原型"),
+                ("gold master", "最终母版"),
+                ("telemetry", "遥测数据"),
+                ("accessibility", "无障碍设计"),
+                ("A/B testing", "A/B 测试"),
+            ],
+        },
+        "notes": (
+            "游戏名称是专有名词：有官方中文名的必须用官方名"
+            "（League of Legends 英雄联盟、Overwatch 守望先锋、Minecraft 我的世界、"
+            "CrossFire 穿越火线）；没有通行官方译名的保留英文原名"
+            "（如 StarCraft II、Dota 2、Civilization VI）。"
+            "HUD 可译「平视显示界面」或保留 HUD；MOBA、RTS、FPS、MMO 等缩写首次出现时"
+            "用「中文全称（缩写）」，其后可只用缩写。"
         ),
     },
 }
 
 _GLOSSARY_MAX = 400
+
+# 单个领域术语块的字符上限。术语表是"参考资料"而非指令，过长会挤占上下文窗口
+# （本地模型默认 ctx=8192）并稀释注意力；超出时按子领域整组丢弃，不做半截截断。
+_DOMAIN_TERMS_MAX_CHARS = 6000
 
 
 def detect_domains(text):
@@ -158,13 +490,47 @@ def _load_glossary(cfg):
     return dict(items[:_GLOSSARY_MAX]), dropped
 
 
+def domain_terms_count(did):
+    """返回某领域的术语条数（供日志/界面展示覆盖规模）。"""
+    groups = (DOMAIN_PROFILES.get(did) or {}).get("terms") or {}
+    if not isinstance(groups, dict):
+        return 0
+    return sum(len(p) for p in groups.values())
+
+
+def _render_terms(prof):
+    """把结构化术语表渲染成提示词文本。
+
+    术语表为 dict（子领域 -> [(英文, 中文), ...]），按子领域分组拼接。
+    超出 _DOMAIN_TERMS_MAX_CHARS 的子领域整组丢弃，返回 (文本, 已用条数, 丢弃条数)。
+    """
+    groups = prof["terms"]
+    lines = [f"【{prof['label']}领域术语规范】以下术语按对应译名翻译："]
+    used = dropped = 0
+    for name, pairs in groups.items():
+        seg = f"{name}：" + "；".join(f"{en} {zh}" for en, zh in pairs) + "。"
+        if used and len("\n".join(lines)) + len(seg) > _DOMAIN_TERMS_MAX_CHARS:
+            dropped += len(pairs)
+            continue
+        lines.append(seg)
+        used += len(pairs)
+    if prof.get("notes"):
+        lines.append(prof["notes"])
+    return "\n".join(lines), used, dropped
+
+
 def build_system_prompt(cfg, domains=None, log=None):
     """组装系统提示词：学术底版 + 领域术语块 + 用户术语表。"""
     parts = [ACADEMIC_PROMPT]
     for did in domains or []:
         prof = DOMAIN_PROFILES.get(did)
-        if prof:
-            parts.append(prof["terms"])
+        if not prof:
+            continue
+        block, _used, dm_dropped = _render_terms(prof)
+        parts.append(block)
+        if dm_dropped and log:
+            log(f"[领域] {prof['label']}术语块超出 {_DOMAIN_TERMS_MAX_CHARS} 字符上限，"
+                f"已省略 {dm_dropped} 条，请精简关键词或拆分领域。")
     gloss, dropped = _load_glossary(cfg)
     if dropped and log:
         log(f"[术语表] 超过 {_GLOSSARY_MAX} 条上限，已忽略后 {dropped} 条，"
