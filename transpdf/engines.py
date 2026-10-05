@@ -440,6 +440,17 @@ DOMAIN_PROFILES = {
 
 _GLOSSARY_MAX = 400
 
+# user 轮不能只丢裸文本：短块（Abstract / References 这类标题）会被模型当成
+# 待续写的前缀，于是原样回显或续写出幻觉文本。注入领域术语表后尤其明显——
+# 实测 'Abstract' 由 3/3 正确退化为 0/3 原样回显、'References' 续写出 2500 字符
+# 参考文献列表；显式给出翻译指令后两块均恢复 3/3（标题类合计 21/27 → 27/27），
+# 长段落译文不受影响。故 user 轮统一包裹翻译指令。
+_USER_INSTRUCTION = "把下面这段文字翻译成简体中文，只输出译文，不要解释、不要照抄原文：\n{}"
+
+
+def _user_turn(text):
+    return _USER_INSTRUCTION.format(text)
+
 # 单个领域术语块的字符上限。术语表是"参考资料"而非指令，过长会挤占上下文窗口
 # （本地模型默认 ctx=8192）并稀释注意力；超出时按子领域整组丢弃，不做半截截断。
 _DOMAIN_TERMS_MAX_CHARS = 6000
@@ -576,11 +587,38 @@ def _plausible(src, dst):
 # 本地大模型（默认，离线）
 # --------------------------------------------------------------------------
 
+# 连续"内容级失败"计数（跨调用累计）。
+#
+# 模型对个别短块（小标题、References 这类）可能续写出幻觉文本，属正常波动——
+# 保留原文即可，不该判定引擎失效。但连续多块都出不来可用译文，则是"服务在、
+# 模型不可用"，必须抛错让 auto 切换：否则用户会拿到一份"翻译完成"却全是原文的
+# 文件。用连续计数而非"本次调用全失败"来判别，是因为本地/在线大模型都是
+# 1 个文本块 = 1 次调用，后者等价于"任意一块失败即整篇放弃"。
+_CONTENT_FAIL_LIMIT = 5
+_fail_lock = threading.Lock()
+_fail_streak = [0]
+
+
+def _streak_reset():
+    with _fail_lock:
+        _fail_streak[0] = 0
+
+
+def _streak_bump():
+    with _fail_lock:
+        _fail_streak[0] += 1
+
+
+def _streak_value():
+    with _fail_lock:
+        return _fail_streak[0]
+
+
 def local_translate(texts, cfg, log=None, domains=None):
     base_url = localserver.ensure_server(cfg, log) + "/v1"
     system_prompt = build_system_prompt(cfg, domains, log)
     use_kwarg = localserver.jinja_ok()
-    out, errors = [], 0
+    out, svc_errors = [], 0
     for t in texts:
         result = ""
         for attempt in (0, 1):
@@ -592,26 +630,31 @@ def local_translate(texts, cfg, log=None, domains=None):
                 if attempt == 0 and status in (400, 422, 500):
                     use_kwarg = False  # 服务端不认思考开关，去掉重试
                     continue
-                errors += 1
+                svc_errors += 1
                 log(f"[翻译] 本地模型返回 HTTP {status}，该段保留原文。")
                 break
             except Exception as e:
-                errors += 1
+                svc_errors += 1
                 log(f"[翻译] 本地模型调用失败（{e!r}），该段保留原文。")
                 break
             if _plausible(t, content):
                 result = _strip_reasoning(content)
+                _streak_reset()
                 break
             if attempt == 0:
                 continue  # 空译文/疑似幻觉，换参数重试一次
-            errors += 1
+            _streak_bump()
             log("[翻译] 译文异常（为空或疑似编造），该段保留原文。")
         out.append(result)
-    if texts and errors == len(texts):
-        # 整批全失败（服务在但出不来译文）必须抛错：静默返回空译文会让 auto 模式
-        # 不切换在线引擎，用户拿到一份"翻译完成"却全是原文的文件。
+    # 服务级失败：整批请求都没能送达/返回（服务进程不在、崩溃、端口不通）
+    if texts and svc_errors == len(texts):
         raise TranslationError(
             "本地模型连续翻译失败（服务无响应或资源不足），"
+            "已自动改用其他可用引擎。")
+    # 内容级失败：连续多段出不来可用译文，判定引擎不可用（服务在但模型有问题）
+    if _streak_value() >= _CONTENT_FAIL_LIMIT:
+        raise TranslationError(
+            f"本地模型连续 {_CONTENT_FAIL_LIMIT} 段译文异常（服务在但出不来可用译文），"
             "已自动改用其他可用引擎。")
     return out
 
@@ -622,7 +665,7 @@ def _chat_once(base_url, system_prompt, text, timeout, use_think_kwarg):
         "temperature": 0.2,
         "messages": [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": text},
+            {"role": "user", "content": _user_turn(text)},
         ],
     }
     if use_think_kwarg:
@@ -652,7 +695,7 @@ def llm_translate(texts, cfg, log=None, domains=None):
             "temperature": 0.2,
             "messages": [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": t},
+                {"role": "user", "content": _user_turn(t)},
             ],
         }
         try:
@@ -813,6 +856,7 @@ _failed_engines = set()
 
 def reset_engine_failures():
     _failed_engines.clear()
+    _streak_reset()
 
 
 def configured_cloud_engines(cfg):

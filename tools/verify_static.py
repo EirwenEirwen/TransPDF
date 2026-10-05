@@ -324,6 +324,76 @@ def t_domain_terms():
     return "；".join(f"{d} {n} 条" for d, n in total.items())
 
 
+def t_local_failure_modes():
+    """本地引擎失败判据：单块幻觉不得废掉整个引擎，真故障必须抛错。
+
+    本地/在线大模型都是「1 个文本块 = 1 次调用」。若拿「本次调用全失败」当
+    「引擎不可用」的判据，则任意一块（如小标题 References）被模型续写成幻觉，
+    就会让整篇文档放弃本地引擎 —— 实测样例论文正是这样全军覆没的。
+    判据必须区分：服务级失败（连不上）与内容级失败（译文不合规）。
+    """
+    orig = (localserver.ensure_server, localserver.jinja_ok, engines._chat_once)
+    logs = []
+
+    def run(fake_chat, texts):
+        engines._streak_reset()
+        engines._chat_once = fake_chat
+        localserver.ensure_server = lambda cfg, log=None: "http://127.0.0.1:1"
+        localserver.jinja_ok = lambda: False
+        try:
+            return engines.local_translate(texts, {}, logs.append)
+        finally:
+            engines._chat_once = orig[2]
+
+    try:
+        # 1) 单块幻觉、其余正常 → 不得抛错，坏块保留原文
+        def chat_one_bad(base, sp, text, timeout, think):
+            return "" if text == "References" else "这是译文"
+
+        res = run(chat_one_bad, ["Good one", "References", "Another good"])
+        assert res == ["这是译文", "", "这是译文"], f"单块幻觉处理错误：{res}"
+
+        # 2) 服务级失败：整批请求都抛异常 → 必须抛错（否则 auto 不会切换引擎）
+        def chat_dead(base, sp, text, timeout, think):
+            raise OSError("connection refused")
+
+        try:
+            run(chat_dead, ["a", "b"])
+        except engines.TranslationError:
+            pass
+        else:
+            raise AssertionError("服务不可用却未抛错，auto 模式不会切换引擎")
+
+        # 3) 连续内容失败达上限 → 抛错（服务在但模型出不来可用译文）
+        def chat_all_bad(base, sp, text, timeout, think):
+            return ""
+
+        try:
+            run(chat_all_bad, ["x"] * engines._CONTENT_FAIL_LIMIT)
+        except engines.TranslationError:
+            pass
+        else:
+            raise AssertionError(
+                f"连续 {engines._CONTENT_FAIL_LIMIT} 段译文异常却未抛错")
+
+        # 4) 成功必须清零连续计数：3 失败 + 1 成功 + 3 失败 不应触发上限
+        def chat_mid(base, sp, text, timeout, think):
+            return "这是译文" if text == "mid" else ""
+
+        res = run(chat_mid, ["a", "b", "c", "mid", "d", "e", "f"])
+        assert res == ["", "", "", "这是译文", "", "", ""], f"未清零：{res}"
+
+        # 5) reset_engine_failures 必须一并清零，否则失败计数会跨任务泄漏
+        engines._streak_bump()
+        engines.reset_engine_failures()
+        assert engines._streak_value() == 0, "reset_engine_failures 未清零连续失败计数"
+    finally:
+        localserver.ensure_server, localserver.jinja_ok, engines._chat_once = orig
+        engines._streak_reset()
+
+    return "单块幻觉不废引擎 / 服务级失败抛错 / 连续异常抛错 / 成功与重置均清零"
+
+
 def t_pdfproc():
     import pymupdf
     path = _ensure_sample()
@@ -364,6 +434,20 @@ def t_src_regressions():
     # 探针超时策略：复用必须宽容、就绪必须短（硬写数字，防止被改回）
     assert "_HEALTH_TIMEOUT = 15.0" in ls, "复用探测超时未放宽到 15s"
     assert "_READY_TIMEOUT = 5.0" in ls, "就绪探测超时未固定为 5s"
+    # 本地引擎失败判据：不得退回"本次调用全失败即引擎不可用"（单块批次下会一票否决）
+    assert "_CONTENT_FAIL_LIMIT" in en, "缺少连续内容失败上限"
+    # 注意：不能用 "errors == len(texts)" 判定——它会被 "svc_errors == len(texts)" 包含
+    assert "out, errors = [], 0" not in en, "退回旧判据：单块幻觉会废掉整个引擎"
+    assert "out, svc_errors = [], 0" in en, "缺少服务级失败计数"
+    assert "svc_errors == len(texts)" in en, "缺少服务级失败判据"
+    # user 轮必须包裹显式翻译指令：裸文本会让短块（Abstract / References）原样回显
+    assert "_USER_INSTRUCTION" in en, "缺少 user 轮翻译指令"
+    assert '"content": _user_turn(text)' in en, "本地引擎 user 轮未包裹翻译指令"
+    assert '"content": _user_turn(t)' in en, "在线大模型 user 轮未包裹翻译指令"
+    # 自检必须按文本块成功率判定，而不是只看中文字符数（后者会漏掉大面积未翻译）
+    assert "blocks_total" in pp, "stats 缺 blocks_total，无法算翻译成功率"
+    mn2 = open(os.path.join(ROOT, "main.py"), encoding="utf-8").read()
+    assert "ok_blocks" in mn2 and "blocks_total" in mn2, "自检未改用文本块成功率判据"
     return "全部关键改动已确认落到源码"
 
 
@@ -378,6 +462,7 @@ check("端口归属判定", t_owns_port)
 check("MyMemory 字节分块", t_chunk)
 check("术语表上限与提示", t_glossary)
 check("领域术语表（结构/渲染/覆盖/护栏）", t_domain_terms)
+check("本地引擎失败判据（单块幻觉 vs 服务故障）", t_local_failure_modes)
 check("extract_page_tasks 真实 PDF 功能", t_pdfproc)
 check("源码级回归断言", t_src_regressions)
 

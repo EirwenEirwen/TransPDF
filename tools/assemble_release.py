@@ -37,12 +37,21 @@ NOTICE = """TransPDF 论文离线翻译器 —— 使用说明
 ========================================
 
 一、快速开始
-  1. 把高质档 GGUF 模型文件（.gguf）放入 models 文件夹（若尚未内置）。
-  2. 双击 TransPDF.exe。
-  3. 选择 PDF 文件，点击「开始翻译」。
+  1. 下载模型（本包不含模型权重）
+     模型约 12.4GB，超出 GitHub 单文件上限，需自行下载：
+       - 在 Hugging Face 或 ModelScope 搜索：Qwen3-30B-A3B-Instruct-2507-GGUF
+       - 下载其中的 Q3_K_S 量化版，文件名形如
+         Qwen3-30B-A3B-Instruct-2507-Q3_K_S.gguf（约 12.4GB）
+       - 把该 .gguf 文件放入本目录的 models 文件夹
+     务必选 Instruct 版本；不要用 Base 版或 Thinking/Reasoning 版，翻译质量会明显变差。
+  2. 双击 TransPDF.exe
+  3. 选择 PDF 文件，点击「开始翻译」
   4. 翻译完成后点「打开译文」。译文与原文件同目录，文件名以"_中文翻译"结尾。
 
 二、首次使用提示
+  - 首次双击若出现 Windows SmartScreen 蓝色警告（本程序未做代码签名），
+    点「更多信息」→「仍要运行」即可。
+  - 解压路径不要含中文与空格，避免个别环境下路径解析问题。
   - 程序会自动检测内存与显卡；显存 12GB 以上可全速运行，纯内存运行较慢。
   - 首次翻译需要把模型加载进显存/内存，需要几十秒到几分钟，之后连续翻译无需重复加载。
   - 默认使用本地模型，翻译全部在本机完成，不联网，论文内容不会离开电脑。
@@ -54,11 +63,17 @@ NOTICE = """TransPDF 论文离线翻译器 —— 使用说明
   - 提示"未找到 llama.cpp"：确认 runtime 文件夹内有 llama-server.exe，或在「高级设置」指定。
   - 扫描件（图片型 PDF）无法翻译：本工具只处理有文字层的 PDF。
   - 加密的 PDF 请先解除密码。
+  - 个别短标题（如 References）可能保留英文原文：模型对极短输入偶尔会不翻译，
+    程序会保留原文而不是写入错误内容。
 
 四、目录说明
   runtime/   llama.cpp 推理引擎（llama-server.exe 与动态库）
-  models/    GGUF 模型权重
+  models/    GGUF 模型权重（需自行下载放入）
   config.json 程序配置（自动生成）
+
+五、许可
+  本程序源码以 MIT 许可发布；随包的 llama.cpp 运行时与思源黑体字库
+  遵循各自的原始许可（见 runtime/LICENSE-LLVM-OpenMP 等文件）。
 """
 
 

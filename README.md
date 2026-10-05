@@ -2,6 +2,10 @@
 
 把英文等外文学术论文 PDF **整体替换为中文**，保持原有排版，**全程离线运行**——论文内容不出本机。
 
+> **下载（Windows，免装 Python 环境）**
+> 到 [Releases](https://github.com/EirwenEirwen/TransPDF/releases/latest) 下载 `TransPDF-v1.0.0-win64.zip`（93MB，含程序本体与 llama.cpp 推理引擎，**不含模型权重**）。
+> 解压 → 把 GGUF 模型放进 `models/` → 双击 `TransPDF.exe`。详见[四、安装与使用](#四安装与使用)。
+
 ---
 
 ## 目录
@@ -101,9 +105,9 @@
 
 ### 4.1 普通用户（使用发布包）
 
-1. 解压发布包到任意目录（路径**不要含中文与空格**，避免个别环境下路径解析问题）
-2. 把 GGUF 模型（`.gguf`）放入 `models/` 文件夹
-3. 双击 `TransPDF.exe`
+1. 从 [Releases](https://github.com/EirwenEirwen/TransPDF/releases/latest) 下载 `TransPDF-v1.0.0-win64.zip` 并解压到任意目录（路径**不要含中文与空格**，避免个别环境下路径解析问题）
+2. 把 GGUF 模型（`.gguf`）放入 `models/` 文件夹（发布包不含模型，获取方式见上一节）
+3. 双击 `TransPDF.exe`。首次运行若弹出 Windows SmartScreen 警告（程序未做代码签名），点「更多信息」→「仍要运行」
 4. 选择 PDF → 点击「开始翻译」→ 完成后点「打开译文」
 
 译文与原文件同目录，文件名以 `_中文翻译` 结尾。
@@ -216,14 +220,18 @@ TransPDF/
 
 ### 5.2 发布包结构
 
+从 [Releases](https://github.com/EirwenEirwen/TransPDF/releases/latest) 下载的 zip 解压后（**不含模型权重**，需按[四、安装与使用](#四安装与使用)自行放入）：
+
 ```
-TransPDF发布包/
+TransPDF-v1.0.0-win64/
 ├── TransPDF.exe        程序本体
 ├── runtime/            llama.cpp 推理引擎（含 llama-server.exe）
-├── models/             GGUF 模型权重
-├── config.json         程序配置（自动生成）
+├── models/             GGUF 模型权重（空目录，需自行放入）
+├── config.json         程序配置（首次保存设置时自动生成）
 └── 使用说明.txt
 ```
+
+> 仓库源码树里没有 `dist/`、`build/`、`release/`（见 `.gitignore`）——这些是构建产物，只在本地生成。
 
 ---
 
@@ -333,6 +341,7 @@ python -m venv <venv路径>
 | 复杂表格 | 单元格文字按块翻译，版面可能略有出入 |
 | 复杂公式行 | 整体跳过（保护不译）；行内混排公式随句子翻译可能变形 |
 | 在线接口 | 有速率与额度限制，`mymemory` 免费额度较低 |
+| 极短文本块偶有保留原文 | 对 `Abstract`、`References` 这类单词级标题，模型偶尔会原样回显而非常翻译；程序判定译文不合理时**保留原文**，不会写入错误内容。实测样例论文 19/19 块全部译出 |
 
 ### 隐私说明
 

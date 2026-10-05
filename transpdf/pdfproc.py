@@ -393,7 +393,7 @@ def translate_pdf(src, dst, cfg=None, log=None,
     if not all_tasks:
         doc.save(dst, garbage=3, deflate=True)
         doc.close()
-        return {"pages": n_pages, "blocks": 0, "chars": 0,
+        return {"pages": n_pages, "blocks": 0, "blocks_total": 0, "chars": 0,
                 "note": "未发现可翻译的外文文本（可能是扫描件或纯中文文档）。"}
 
     font_path = find_cjk_font(cfg)
@@ -488,5 +488,5 @@ def translate_pdf(src, dst, cfg=None, log=None,
     doc.save(tmp, garbage=3, deflate=True)
     doc.close()
     os.replace(tmp, dst)
-    return {"pages": n_pages, "blocks": translated,
+    return {"pages": n_pages, "blocks": translated, "blocks_total": len(all_tasks),
             "chars": total_chars, "note": ""}

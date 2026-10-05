@@ -72,7 +72,7 @@ def run_selftest():
         out = os.path.join(tmpdir, "sample_paper_中文翻译.pdf")
         log(f"[4/5] 样例论文已生成：{sample}，开始离线翻译…")
 
-        pdfproc.translate_pdf(
+        stats = pdfproc.translate_pdf(
             sample, out, cfg=cfg, log=log,
             progress=lambda f, m: None)
         log("[4/5] 翻译流程执行完毕。")
@@ -85,8 +85,18 @@ def run_selftest():
         cjk = len(re.findall(r"[\u4e00-\u9fff]", all_text))
         pages = doc.page_count
         doc.close()
-        log(f"[5/5] 输出校验：{pages} 页，中文字符 {cjk} 个。")
-        if cjk < 100:
+
+        # 判据用"文本块翻译成功率"而不是"中文字符数"：字符数可能来自少数成功块，
+        # 反映不了"大部分内容其实没翻"。样例论文共 19 块，正常应 ≥18 块成功。
+        ok_blocks = int(stats.get("blocks") or 0)
+        all_blocks = int(stats.get("blocks_total") or 0)
+        log(f"[5/5] 输出校验：{pages} 页，文本块 {ok_blocks}/{all_blocks} 已翻译，"
+            f"中文字符 {cjk} 个。")
+        if all_blocks and ok_blocks * 4 < all_blocks * 3:
+            log(f"校验未通过：仅 {ok_blocks}/{all_blocks} 块完成翻译"
+                f"（低于 75%，说明引擎多数请求未成功）。")
+            code = EXIT_FAIL
+        elif cjk < 100:
             log("校验未通过：译文中文字符过少。")
             code = EXIT_FAIL
         elif code == EXIT_OK:
