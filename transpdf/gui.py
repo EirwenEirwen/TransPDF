@@ -107,8 +107,9 @@ class App(tk.Tk):
             engine_id = "local"
         self.engine_cb.current(list(engines.ENGINE_LABELS).index(engine_id))
         self.engine_cb.pack(side="left")
-        ttk.Label(frm1b, foreground="#888",
-                  text="默认本地模型，纯离线；选在线接口需在高级设置里配置密钥").pack(side="left", padx=8)
+        self.fig_var = tk.BooleanVar(value=bool(self.cfg.get("do_figures", True)))
+        ttk.Checkbutton(frm1b, text="同时翻译图片内文字（图表/插图）",
+                        variable=self.fig_var).pack(side="left", padx=(14, 0))
 
         frm2 = ttk.Frame(self)
         frm2.pack(fill="x", **pad)
@@ -207,6 +208,7 @@ class App(tk.Tk):
         dst = base + "_中文翻译" + ext
         engine_id = list(engines.ENGINE_LABELS)[self.engine_cb.current()]
         self.cfg["engine"] = engine_id
+        self.cfg["do_figures"] = bool(self.fig_var.get())
         try:
             save_config(self.cfg)
         except RuntimeError:
@@ -222,9 +224,10 @@ class App(tk.Tk):
 
     def _work(self, src, dst, engine_id):
         cfg = dict(self.cfg)
+        do_figures = bool(self.fig_var.get())
         try:
             pdfproc.translate_pdf(
-                src, dst, cfg=cfg, engine=engine_id,
+                src, dst, cfg=cfg, engine=engine_id, do_figures=do_figures,
                 log=lambda s: self.q.put(("log", s)),
                 progress=lambda f, m: self.q.put(("progress", f, m)),
                 cancel=self.cancel_event)
@@ -326,6 +329,17 @@ class SettingsDialog(tk.Toplevel):
         self.llama_dir.insert(0, self.cfg.get("local", {}).get("llama_dir", ""))
         ttk.Button(row, text="浏览…", command=self._browse_llama).pack(side="left", padx=4)
         ttk.Button(row, text="自动探测", command=self._autodetect).pack(side="left")
+        r += 1
+
+        # 图片翻译工具目录
+        ttk.Label(f, text="图片文字翻译工具（manga-translator-ui 目录，可选）：")            .grid(row=r, column=0, sticky="w", pady=(10, 0))
+        r += 1
+        frow = ttk.Frame(f); frow.grid(row=r, column=0, columnspan=3, sticky="we")
+        self.figtool_dir = ttk.Entry(frow)
+        self.figtool_dir.pack(side="left", fill="x", expand=True)
+        self.figtool_dir.insert(0, self.cfg.get("figure", {}).get("tool_dir", ""))
+        ttk.Button(frow, text="浏览…", command=self._browse_figtool).pack(side="left", padx=4)
+        ttk.Button(frow, text="自动探测", command=self._autodetect_figtool).pack(side="left")
         r += 1
 
         ttk.Label(f, text="翻译模型（GGUF）：").grid(row=r, column=0, sticky="w", pady=(8, 0))
@@ -473,6 +487,24 @@ class SettingsDialog(tk.Toplevel):
         ok, msg = engines.test_connection(engine, self.cfg)
         (messagebox.showinfo if ok else messagebox.showwarning)("测试结果", msg, parent=self)
 
+    def _browse_figtool(self):
+        from tkinter import filedialog
+        d = filedialog.askdirectory(title="选择 manga-translator-ui 目录",
+                                    initialdir=self.figtool_dir.get() or os.path.expanduser("~"))
+        if d:
+            self.figtool_dir.delete(0, "end")
+            self.figtool_dir.insert(0, d)
+
+    def _autodetect_figtool(self):
+        from transpdf import figproc
+        d = figproc.find_figure_tool({"figure": {}})
+        if d:
+            self.figtool_dir.delete(0, "end")
+            self.figtool_dir.insert(0, d)
+        else:
+            from tkinter import messagebox
+            messagebox.showinfo("未找到", "常见位置未发现 manga-translator-ui，请手动浏览选择。", parent=self)
+
     def _browse_llama(self):
         d = filedialog.askdirectory(title="选择 llama.cpp 目录（含 llama-server.exe）",
                                     initialdir=self.llama_dir.get() or os.path.expanduser("~"))
@@ -522,6 +554,8 @@ class SettingsDialog(tk.Toplevel):
         self.cfg["baidu"] = {"appid": self.bd_id.get().strip(), "key": self.bd_key.get().strip()}
         self.cfg["deepl"] = {"api_key": self.dl_key.get().strip(), "free": bool(self.dl_free.get())}
         self.cfg["mymemory_email"] = self.mm_mail.get().strip()
+        self.cfg.setdefault("figure", {})
+        self.cfg["figure"]["tool_dir"] = self.figtool_dir.get().strip()
         # 术语表：每行 英文=中文
         gloss = {}
         for raw in self.glossary_text.get("1.0", "end").splitlines():

@@ -17,7 +17,7 @@ if not exist fonts\SourceHanSansCN-Regular.ttf (
 )
 
 echo [3/3] PyInstaller 打包...
-python -m PyInstaller --noconfirm --clean --onefile --windowed --name TransPDF --add-data "fonts;fonts" main.py || goto :err
+python -m PyInstaller --noconfirm --clean --onefile --windowed --name TransPDF --add-data "fonts;fonts" --add-data "tools/render_with_tool.py;tools" main.py || goto :err
 
 echo.
 echo 构建完成: dist\TransPDF.exe

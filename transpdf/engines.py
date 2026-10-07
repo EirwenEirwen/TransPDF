@@ -530,9 +530,9 @@ def _render_terms(prof):
     return "\n".join(lines), used, dropped
 
 
-def build_system_prompt(cfg, domains=None, log=None):
-    """组装系统提示词：学术底版 + 领域术语块 + 用户术语表。"""
-    parts = [ACADEMIC_PROMPT]
+def build_system_prompt(cfg, domains=None, log=None, base=None):
+    """组装系统提示词：底版（默认学术，可传图片版）+ 领域术语块 + 用户术语表。"""
+    parts = [base or ACADEMIC_PROMPT]
     for did in domains or []:
         prof = DOMAIN_PROFILES.get(did)
         if not prof:
@@ -614,9 +614,9 @@ def _streak_value():
         return _fail_streak[0]
 
 
-def local_translate(texts, cfg, log=None, domains=None):
+def local_translate(texts, cfg, log=None, domains=None, prompt=None):
     base_url = localserver.ensure_server(cfg, log) + "/v1"
-    system_prompt = build_system_prompt(cfg, domains, log)
+    system_prompt = build_system_prompt(cfg, domains, log, base=prompt)
     use_kwarg = localserver.jinja_ok()
     out, svc_errors = [], 0
     for t in texts:
@@ -680,14 +680,14 @@ def _chat_once(base_url, system_prompt, text, timeout, use_think_kwarg):
 # 在线大模型（OpenAI 兼容）
 # --------------------------------------------------------------------------
 
-def llm_translate(texts, cfg, log=None, domains=None):
+def llm_translate(texts, cfg, log=None, domains=None, prompt=None):
     llm = cfg.get("llm", {})
     base = (llm.get("base_url") or "").rstrip("/")
     key = llm.get("api_key") or ""
     model = llm.get("model") or ""
     if not base or not key:
         raise TranslationError("大模型接口未配置完整（需要接口地址和 API Key），可在「高级设置 → 在线接口」中配置")
-    system_prompt = build_system_prompt(cfg, domains, log)
+    system_prompt = build_system_prompt(cfg, domains, log, base=prompt)
     out = []
     for t in texts:
         payload = {
@@ -729,7 +729,7 @@ _baidu_lock = threading.Lock()
 _baidu_last = [0.0]
 
 
-def baidu_translate(texts, cfg, log=None, domains=None):
+def baidu_translate(texts, cfg, log=None, domains=None, prompt=None):  # prompt: 机器翻译接口不使用
     b = cfg.get("baidu", {})
     appid, key = b.get("appid") or "", b.get("key") or ""
     if not appid or not key:
@@ -765,7 +765,7 @@ def baidu_translate(texts, cfg, log=None, domains=None):
 # DeepL
 # --------------------------------------------------------------------------
 
-def deepl_translate(texts, cfg, log=None, domains=None):
+def deepl_translate(texts, cfg, log=None, domains=None, prompt=None):  # prompt: 机器翻译接口不使用
     d = cfg.get("deepl", {})
     key = d.get("api_key") or ""
     if not key:
@@ -813,7 +813,7 @@ def _strip_markup(text):
     return re.sub(r"</?g[^>]*>|<x[^>]*/>|<bx[^>]*/>", "", text or "")
 
 
-def mymemory_translate(texts, cfg, log=None, domains=None):
+def mymemory_translate(texts, cfg, log=None, domains=None, prompt=None):  # prompt: 机器翻译接口不使用
     email = cfg.get("mymemory_email") or ""
     out = []
     for t in texts:
@@ -884,7 +884,7 @@ def local_available(cfg):
         return False
 
 
-def translate_texts(texts, cfg=None, log=None, domains=None, engine="local"):
+def translate_texts(texts, cfg=None, log=None, domains=None, engine="local", prompt=None):
     """翻译一批文本，返回等长译文列表。
 
     engine="auto"：本地优先，失败自动切换到已配置的在线接口；
@@ -905,7 +905,7 @@ def translate_texts(texts, cfg=None, log=None, domains=None, engine="local"):
             continue
         label = ENGINE_LABELS.get(eid, eid)
         try:
-            return _ENGINE_FUNCS[eid](texts, cfg, log, domains)
+            return _ENGINE_FUNCS[eid](texts, cfg, log, domains, prompt)
         except TranslationError as e:
             errors.append(f"{label}：{e}")
             _failed_engines.add(eid)

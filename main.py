@@ -116,12 +116,14 @@ def run_selftest():
     return code
 
 
-def run_headless(src, dst=None, engine="local"):
+def run_headless(src, dst=None, engine="local", do_figures=None):
     """命令行翻译。返回进程退出码。"""
     from transpdf.config import load_config
     from transpdf import pdfproc
     cfg = load_config()
     dst = dst or os.path.splitext(src)[0] + "_中文翻译.pdf"
+    if do_figures is None:
+        do_figures = bool(cfg.get("do_figures", False))
 
     def log(s):
         print(s, flush=True)
@@ -131,7 +133,7 @@ def run_headless(src, dst=None, engine="local"):
 
     try:
         stats = pdfproc.translate_pdf(src, dst, cfg=cfg, log=log, progress=progress,
-                                      engine=engine)
+                                      engine=engine, do_figures=do_figures)
     except InterruptedError:
         print("已取消。", flush=True)
         return EXIT_FAIL
@@ -153,6 +155,10 @@ def main():
     parser.add_argument("--engine", default="local",
                         choices=list(engines.ENGINE_LABELS),
                         help="翻译引擎（默认 local 离线）")
+    parser.add_argument("--figures", dest="figures", action="store_true",
+                        default=None, help="同时翻译图片内文字（图表/插图）")
+    parser.add_argument("--no-figures", dest="figures", action="store_false",
+                        help="跳过图片内文字翻译")
     parser.add_argument("--version", action="store_true", help="显示版本")
     args = parser.parse_args()
 
@@ -163,7 +169,7 @@ def main():
     if args.selftest:
         return run_selftest()
     if args.input:
-        return run_headless(args.input, args.output, args.engine)
+        return run_headless(args.input, args.output, args.engine, args.figures)
 
     from transpdf.gui import run_gui
     run_gui()

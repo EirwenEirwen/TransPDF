@@ -353,11 +353,12 @@ def _batch_tasks(tasks, budget=2200, max_items=40):
         yield batch
 
 
-def translate_pdf(src, dst, cfg=None, log=None,
-                  progress=None, cancel=None, engine="local"):
+def translate_pdf(src, dst, cfg=None, log=None, progress=None, cancel=None,
+                  engine="local", do_figures=False):
     """翻译 PDF 并输出到 dst。log/progress/cancel 为回调。
 
-    engine：local（默认，离线）/ auto / llm / baidu / deepl / mymemory。"""
+    engine：local（默认，离线）/ auto / llm / baidu / deepl / mymemory。
+    do_figures：同时翻译内嵌图片中的外文文字（需 manga-translator-ui）。"""
     cfg = cfg or {}
     log = log or (lambda s: None)
     progress = progress or (lambda f, m: None)
@@ -470,23 +471,44 @@ def translate_pdf(src, dst, cfg=None, log=None,
     if failures and len(failures) >= len(units):
         raise RuntimeError("全部翻译请求均失败。" + "；".join(failures[:3]))
 
-    # ---- 写回阶段 ----
+    # ---- 写回阶段（图片翻译启用时文本阶段进度止于 0.85）----
+    text_top = 0.85 if do_figures else 1.0
     translated = sum(1 for t in all_tasks if t.translation)
     for i in range(n_pages):
         if cancel and cancel.is_set():
             raise InterruptedError("已取消")
         page_tasks = [t for t in pages_tasks[i] if t.translation]
         if not page_tasks:
-            progress(0.8 + 0.2 * (i + 1) / n_pages, f"写回第 {i + 1}/{n_pages} 页…")
+            progress(0.8 + (text_top - 0.8) * (i + 1) / n_pages,
+                     f"写回第 {i + 1}/{n_pages} 页…")
             continue
         _redact_page(doc[i], page_tasks)
         for t in page_tasks:
             write_task(doc[i], t, font_path, log)
-        progress(0.8 + 0.2 * (i + 1) / n_pages, f"写回第 {i + 1}/{n_pages} 页…")
+        progress(0.8 + (text_top - 0.8) * (i + 1) / n_pages,
+                 f"写回第 {i + 1}/{n_pages} 页…")
+
+    # ---- 图片文字翻译（图表/插图/漫画页）----
+    fig_stats = {}
+    if do_figures:
+        try:
+            from . import figproc
+            fig_stats = figproc.translate_figures(
+                doc, cfg, log=log, progress=progress, cancel=cancel,
+                engine=engine, domains=cfg.get("_domains"))
+            table = fig_stats.get("table")
+            if table:
+                figproc.write_table_md(
+                    table, os.path.splitext(dst)[0] + "_图片对照表.md")
+                log(f"[图片] 对照表已输出：{os.path.splitext(dst)[0]}_图片对照表.md")
+        except InterruptedError:
+            raise
+        except Exception as e:
+            log(f"[图片] 图片翻译失败（不影响正文译文）：{e}")
 
     tmp = dst + ".tmp"
     doc.save(tmp, garbage=3, deflate=True)
     doc.close()
     os.replace(tmp, dst)
     return {"pages": n_pages, "blocks": translated, "blocks_total": len(all_tasks),
-            "chars": total_chars, "note": ""}
+            "chars": total_chars, "figures": fig_stats, "note": ""}

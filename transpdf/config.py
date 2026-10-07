@@ -20,6 +20,8 @@ DEFAULTS = {
     "baidu": {"appid": "", "key": ""},
     "deepl": {"api_key": "", "free": True},
     "mymemory_email": "",     # 免费在线接口的可选邮箱（提升每日限额）
+    "figure": {"tool_dir": ""},  # manga-translator-ui 目录（图片文字翻译）
+    "do_figures": True,       # 默认同时翻译图片内文字（工具缺失时自动跳过）
     "extra_model_dir": "",    # 额外的模型扫描目录（如 F:\LModel\models）
     "glossary": {},           # 自定义术语表 {"英文": "中文"}（也可用同目录 glossary.txt）
     "last_dir": "",           # 上次打开的文件夹
